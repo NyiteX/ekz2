@@ -333,6 +333,7 @@ public:
 				}
 				os << "\n";
 			}
+			os.close();
 		}
 		else
 			cout << "Файл не был открыт.\n";
