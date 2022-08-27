@@ -4,8 +4,26 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <windows.h>
+#define UP 72
+#define DOWN 80
+#define ESC 27
+#define ENTER 13
 using namespace std;
 
+HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+void GoToXY(short x, short y)
+{
+	SetConsoleCursorPosition(hStdOut, { x, y });
+}
+void ConsoleCursorVisible(bool show, short size)
+{
+	CONSOLE_CURSOR_INFO structCursorInfo;
+	GetConsoleCursorInfo(hStdOut, &structCursorInfo);
+	structCursorInfo.bVisible = show;
+	structCursorInfo.dwSize = size;
+	SetConsoleCursorInfo(hStdOut, &structCursorInfo);
+}
 bool Proverka(const string& st)
 {
 	for (int i = 0; i < st.size(); i++)
@@ -43,9 +61,9 @@ public:
 		if (!pok.empty())
 			for (int i = 0; i < pok.size(); i++)
 			{
-				cout << i + 1 << ":\n";
-				cout << " Номер карты:" << pok[i].number << endl;
-				cout << " Остаток средств:" << pok[i].summa << endl;
+				cout << "ID: " << i + 1 << "\n";
+				cout << "Номер карты:" << pok[i].number << endl;
+				cout << "Остаток средств:" << pok[i].summa << endl;
 			}
 		else
 		{
@@ -66,6 +84,7 @@ public:
 			}
 		else
 		{
+			SetConsoleTextAttribute(hStdOut, 4);
 			cout << "Список пуст.\n";
 		}
 	}
@@ -158,160 +177,305 @@ public:
 	void Pokupka_Pocket()
 	{
 		K2 t;
-		string tmp;
+		string tmp = "adasdk";
 		char vvod = 'a';
-		while (vvod != '1' && vvod != '2')
-		{
-			cout << "~~~~~~~~~~~~~ Выбор категории покупки. ~~~~~~~~~~~~~\n";
-			cout << "1. Прод. товары.\n2. Пром. товары.\n";
-			vvod = _getch();
-			if (vvod != '1' && vvod != '2')
-				cout << "Нужно выбрать 1 или 2.\n";
-		}
-		tmp = "adkaw";
-		while (Proverka(tmp) == 0)
-		{
-			cout << "Сумма покупки: ";
-			cin >> tmp;
-			if (Proverka(tmp) == 0)
-				cout << "Это не цифра.\n";
-		}
-		t.zatrat = stoi(tmp);
-		tmp = "adkaw";
-		cout << "~~~~~~~~~~~~~ Выбор кошелька для оплаты. ~~~~~~~~~~~~~\n";
-		Print(pocket);
-		if (!pocket.empty())
-		{
-			while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > pocket.size())
-			{
-				cout << "Выберите номер кошелька: ";
-				cin >> tmp;
-				if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > pocket.size())
-					cout << "Неправильный номер.\n";
-			}
-			int id = stoi(tmp) - 1;
+		int active_menu2 = 0;
+		while (vvod != 49 && vvod != 50 && vvod!=27)
+		{		
+			int x = 32, y = 17;
+			system("cls");
+			GoToXY(x, y);
 
-			if (vvod == '1')
+			string Menu2[] = { "Прод. товары","Пром. товары","Предыдущее меню" };
+
+			for (int i = 0; i < size(Menu2); i++)
 			{
-				t.category = "Прод. товары.";
+				if (i == active_menu2)
+					SetConsoleTextAttribute(hStdOut, 8);
+				else
+					SetConsoleTextAttribute(hStdOut, 7);
+				GoToXY(x, y++);
+				cout << Menu2[i] << endl;
 			}
-			if (vvod == '2')
+			vvod = _getch();
+			switch (vvod)
 			{
-				t.category = "Пром. товары.";
+			case UP:
+				if (--active_menu2 < 0)
+					active_menu2 = size(Menu2) - 1;
+				break;
+			case DOWN:
+				if (++active_menu2 > size(Menu2) - 1)
+					active_menu2 = 0;
+				break;
+			case ENTER:
+				switch (active_menu2)
+				{
+				case 0:
+					vvod = 49;
+					break;
+				case 1:
+					vvod = 50;
+					break;
+				case 2:
+					vvod = 27;
+					break;
+				}
 			}
-			if (pocket[id].summa - t.zatrat >= 0)
+		}	
+		if(vvod == 49 || vvod == 50)
+		{
+			SetConsoleTextAttribute(hStdOut, 8);
+			while (Proverka(tmp) == 0)
 			{
-				pocket[id].pokupki.push_back(t);
-				pocket[id].summa -= t.zatrat;
+				cout << "Сумма покупки: ";
+				cin >> tmp;
+				if (Proverka(tmp) == 0)
+				{
+					SetConsoleTextAttribute(hStdOut, 4);
+					cout << "Это не цифра.\n";
+				}
 			}
-			else
-				cout << "Недостаточно средств.\n";
+			t.zatrat = stoi(tmp);
+			tmp = "adkaw";
+			cout << "~~~~~~~~~~~~~ Выбор кошелька для оплаты. ~~~~~~~~~~~~~\n";
+			Print(pocket);
+			if (!pocket.empty())
+			{
+				while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > pocket.size())
+				{
+					cout << "Выберите номер кошелька: ";
+					cin >> tmp;
+					if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > pocket.size())
+					{
+						SetConsoleTextAttribute(hStdOut, 4);
+						cout << "Неправильный номер.\n";
+					}
+				}
+				int id = stoi(tmp) - 1;
+
+				if (vvod == '1')
+				{
+					t.category = "Прод. товары.";
+				}
+				if (vvod == '2')
+				{
+					t.category = "Пром. товары.";
+				}
+				if (pocket[id].summa - t.zatrat >= 0)
+				{
+					pocket[id].pokupki.push_back(t);
+					pocket[id].summa -= t.zatrat;
+					vvod = 27;
+				}
+				else
+				{
+					vvod = 27;
+					SetConsoleTextAttribute(hStdOut, 4);
+					cout << "Недостаточно средств.\n";
+				}
+			}
 		}
 	}
 	void Pokupka_Card_deb()
 	{
 		K2 t;
-		string tmp;
+		string tmp = "adasdk";
 		char vvod = 'a';
-		while (vvod != '1' && vvod != '2')
+		int active_menu2 = 0;
+		while (vvod != 49 && vvod != 50 && vvod != 27)
 		{
-			cout << "~~~~~~~~~~~~~ Выбор категории покупки. ~~~~~~~~~~~~~\n";
-			cout << "1. Прод. товары.\n2. Пром. товары.\n";
-			vvod = _getch();
-			if (vvod != '1' && vvod != '2')
-				cout << "Нужно выбрать 1 или 2.\n";
-		}
-		tmp = "adkaw";
-		while (Proverka(tmp) == 0)
-		{
-			cout << "Сумма покупки: ";
-			cin >> tmp;
-			if (Proverka(tmp) == 0)
-				cout << "Это не цифра.\n";
-		}
-		t.zatrat = stoi(tmp);
-		tmp = "adkaw";
-		cout << "~~~~~~~~~~~~~ Выбор карты(дебет) для оплаты. ~~~~~~~~~~~~~\n";
-		Print(card_deb);
-		if (!card_deb.empty())
-		{
-			while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_deb.size())
-			{
-				cout << "Выберите номер карты(дебет): ";
-				cin >> tmp;
-				if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_deb.size())
-					cout << "Неправильный номер.\n";
-			}
-			int id = stoi(tmp) - 1;
+			int x = 32, y = 17;
+			system("cls");
+			GoToXY(x, y);
 
-			if (vvod == '1')
+			string Menu2[] = { "Прод. товары","Пром. товары","Предыдущее меню" };
+
+			for (int i = 0; i < size(Menu2); i++)
 			{
-				t.category = "Прод. товары.";
+				if (i == active_menu2)
+					SetConsoleTextAttribute(hStdOut, 8);
+				else
+					SetConsoleTextAttribute(hStdOut, 7);
+				GoToXY(x, y++);
+				cout << Menu2[i] << endl;
 			}
-			if (vvod == '2')
+			vvod = _getch();
+			switch (vvod)
 			{
-				t.category = "Пром. товары.";
+			case UP:
+				if (--active_menu2 < 0)
+					active_menu2 = size(Menu2) - 1;
+				break;
+			case DOWN:
+				if (++active_menu2 > size(Menu2) - 1)
+					active_menu2 = 0;
+				break;
+			case ENTER:
+				switch (active_menu2)
+				{
+				case 0:
+					vvod = 49;
+					break;
+				case 1:
+					vvod = 50;
+					break;
+				case 2:
+					vvod = 27;
+					break;
+				}
 			}
-			
-			if (card_deb[id].summa - t.zatrat >= 0)
+		}
+		if (vvod == 49 || vvod == 50)
+		{
+			SetConsoleTextAttribute(hStdOut, 8);
+			while (Proverka(tmp) == 0)
 			{
-				card_deb[id].pokupki.push_back(t);
-				card_deb[id].summa -= t.zatrat;
+				cout << "Сумма покупки: ";
+				cin >> tmp;
+				if (Proverka(tmp) == 0)
+				{
+					SetConsoleTextAttribute(hStdOut, 4);
+					cout << "Это не цифра.\n";
+				}
 			}
-			else
-				cout << "Недостаточно средств.\n";
+			t.zatrat = stoi(tmp);
+			tmp = "adkaw";
+			cout << "~~~~~~~~~~~~~ Выбор карты(дебет) для оплаты. ~~~~~~~~~~~~~\n";
+			Print(card_deb);
+			if (!card_deb.empty())
+			{
+				while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_deb.size())
+				{
+					cout << "Выберите номер карты(дебет): ";
+					cin >> tmp;
+					if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_deb.size())
+					{
+						SetConsoleTextAttribute(hStdOut, 4);
+						cout << "Неправильный номер.\n";
+					}
+				}
+				int id = stoi(tmp) - 1;
+
+				if (vvod == '1')
+				{
+					t.category = "Прод. товары.";
+				}
+				if (vvod == '2')
+				{
+					t.category = "Пром. товары.";
+				}
+				if (card_deb[id].summa - t.zatrat >= 0)
+				{
+					card_deb[id].pokupki.push_back(t);
+					card_deb[id].summa -= t.zatrat;
+					vvod = 27;
+				}
+				else
+				{
+					vvod = 27;
+					SetConsoleTextAttribute(hStdOut, 4);
+					cout << "Недостаточно средств.\n";
+				}
+			}
 		}
 	}
 	void Pokupka_Card_credit()
 	{
 		K2 t;
-		string tmp;
+		string tmp = "adasdk";
 		char vvod = 'a';
-		while (vvod != '1' && vvod != '2')
+		int active_menu2 = 0;
+		while (vvod != 49 && vvod != 50 && vvod != 27)
 		{
-			cout << "~~~~~~~~~~~~~ Выбор категории покупки. ~~~~~~~~~~~~~\n";
-			cout << "1. Прод. товары.\n2. Пром. товары.\n";
-			vvod = _getch();
-			if (vvod != '1' && vvod != '2')
-				cout << "Нужно выбрать 1 или 2.\n";
-		}
-		tmp = "adkaw";
-		while (Proverka(tmp) == 0)
-		{
-			cout << "Сумма покупки: ";
-			cin >> tmp;
-			if (Proverka(tmp) == 0)
-				cout << "Это не цифра.\n";
-		}
-		t.zatrat = stoi(tmp);
-		tmp = "adkaw";
-		cout << "~~~~~~~~~~~~~ Выбор карты(кредит) для оплаты. ~~~~~~~~~~~~~\n";
-		Print(card_credit);
-		if (!card_credit.empty())
-		{
-			while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_credit.size())
-			{
-				cout << "Выберите номер карты(кредит): ";
-				cin >> tmp;
-				if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_credit.size())
-					cout << "Неправильный номер.\n";
-			}
-			int id = stoi(tmp) - 1;
+			int x = 32, y = 17;
+			system("cls");
+			GoToXY(x, y);
 
-			if (vvod == '1')
+			string Menu2[] = { "Прод. товары","Пром. товары","Предыдущее меню" };
+
+			for (int i = 0; i < size(Menu2); i++)
 			{
-				t.category = "Прод. товары.";
+				if (i == active_menu2)
+					SetConsoleTextAttribute(hStdOut, 8);
+				else
+					SetConsoleTextAttribute(hStdOut, 7);
+				GoToXY(x, y++);
+				cout << Menu2[i] << endl;
 			}
-			if (vvod == '2')
+			vvod = _getch();
+			switch (vvod)
 			{
-				t.category = "Пром. товары.";
+			case UP:
+				if (--active_menu2 < 0)
+					active_menu2 = size(Menu2) - 1;
+				break;
+			case DOWN:
+				if (++active_menu2 > size(Menu2) - 1)
+					active_menu2 = 0;
+				break;
+			case ENTER:
+				switch (active_menu2)
+				{
+				case 0:
+					vvod = 49;
+					break;
+				case 1:
+					vvod = 50;
+					break;
+				case 2:
+					vvod = 27;
+					break;
+				}
 			}
-			card_credit[id].pokupki.push_back(t);
-			card_credit[id].summa -= t.zatrat;
+		}
+		if (vvod == 49 || vvod == 50)
+		{
+			SetConsoleTextAttribute(hStdOut, 8);
+			while (Proverka(tmp) == 0)
+			{
+				cout << "Сумма покупки: ";
+				cin >> tmp;
+				if (Proverka(tmp) == 0)
+				{
+					SetConsoleTextAttribute(hStdOut, 4);
+					cout << "Это не цифра.\n";
+				}
+			}
+			t.zatrat = stoi(tmp);
+			tmp = "adkaw";
+			cout << "~~~~~~~~~~~~~ Выбор карты(кредит) для оплаты. ~~~~~~~~~~~~~\n";
+			Print(card_credit);
+			if (!card_credit.empty())
+			{
+				while (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_credit.size())
+				{
+					cout << "Выберите номер карты(кредит): ";
+					cin >> tmp;
+					if (Proverka(tmp) == 0 || stoi(tmp) < 1 || stoi(tmp) > card_credit.size())
+					{
+						SetConsoleTextAttribute(hStdOut, 4);
+						cout << "Неправильный номер.\n";
+					}
+				}
+				int id = stoi(tmp) - 1;
+
+				if (vvod == '1')
+				{
+					t.category = "Прод. товары.";
+				}
+				if (vvod == '2')
+				{
+					t.category = "Пром. товары.";
+				}
+				card_credit[id].pokupki.push_back(t);
+				card_credit[id].summa -= t.zatrat;
+				vvod = 27;
+			}
 		}
 	}
-	void SavetoFile(const vector<K>& pok,const int&id)
-	{	
+	void SavetoFile(const vector<K>& pok, const int& id)
+	{
 		string path;
 		if (id == 1)
 			path = "pocket.txt";
@@ -333,15 +497,16 @@ public:
 				}
 				os << "\n";
 			}
-			os.close();
 		}
 		else
 			cout << "Файл не был открыт.\n";
 	}
+
 	void TopSumm(const vector<K>& pok)
 	{
 		if (!pok.empty())
 		{
+			SetConsoleTextAttribute(hStdOut, 8);
 			int kol = 1;
 			vector<int>mas;
 			for (int i = 0; i < pok.size(); i++)
@@ -359,258 +524,427 @@ public:
 			}
 		}
 		else
+		{
+			SetConsoleTextAttribute(hStdOut, 4);
 			cout << "Список пуст.\n";
+		}
 	}
 };
 
 int main()
 {
 	srand(time(0));
-	setlocale(LC_ALL, "ru");
+	SetConsoleTitle(L"DA");
+	system("Color 0D");
+	setlocale(LC_ALL, "Rus");
+	ConsoleCursorVisible(false, 100);
 	Finan A;
-	char vvod;
-	do
-	{
-		system("cls");
-		cout << "1. Кошелёк.\n2. Карта дебетовая.\n";
-		cout <<	"3. Карта кредитная.\n";
-		cout << "ESC. Выход.\n~~~~~~~~~~~~~~~~~~~~~~~\n";
-		vvod = _getch();
-		switch (vvod)
-		{
-		case'1':
-		{
-			char vvod2;
-			do
-			{
-				system("cls");
-				cout << "1. Добавить кошелёк.\n2. Пополнить кошелёк.\n";
-				cout << "3. Показать список всех кошельков.\n4. Сделать покупки.\n";
-				cout << "5. Отчёт о покупках.\n6. Сохранение отчёта в файл.\n";
-				cout << "7. Топ 3 максимальных платежей.\n";
-				cout << "Esc. Предыдущее меню.\n~~~~~~~~~~~~~~~~~~~~~~~\n";
-				vvod2 = _getch();
-				switch (vvod2)
-				{
-				case'1':
-				{
-					A.set_Pocket(A.AddPocket());
-					system("pause");
-					break;
-				}
-				case'2':
-				{
-					if (A.getPocket().size() > 0)
-					{
-						A.Popolnenie_Pocket();
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'3':
-				{
-					if (A.getPocket().size() > 0)
-					{
-						A.Print(A.getPocket());
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'4':
-				{
-					if (!A.getPocket().empty())
-					A.Pokupka_Pocket();
-					else
-					cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'5':
-				{
-					A.PrintOtch(A.getPocket());
-					system("pause");
-					break;
-				}
-				case'6':
-				{
-					if (!A.getPocket().empty())
-						A.SavetoFile(A.getPocket(), 1);
-					else
-						cout << "Список пуст.\n";
-					system("pause");
-					break;
-				}
-				case'7':
-				{			
-					A.TopSumm(A.getPocket());
-					system("pause");
-					break;
-				}
-				}
-			} while (vvod2 != 27);
-			break;
-		}
-		case'2':
-		{
-			char vvod2;
-			do
-			{
-				system("cls");
-				cout << "1. Добавить карту(дебет).\n2. Пополнить карту(дебет).\n";
-				cout << "3. Показать список всех карт(дебет).\n4. Сделать покупки.\n";
-				cout << "5. Отчёт о покупках.\n6. Сохранение отчёта в файл.\n";
-				cout << "7. Топ 3 максимальных платежей.\n";
-				cout << "Esc. Предыдущее меню.\n~~~~~~~~~~~~~~~~~~~~~~~\n";
-				vvod2 = _getch();
-				switch (vvod2)
-				{
-				case'1':
-				{
-					A.set_Card_deb(A.AddPocket());
-					system("pause");
-					break;
-				}
-				case'2':
-				{
-					if (A.getCard_deb().size() > 0)
-					{
-						A.Popolnenie_Card_deb();
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'3':
-				{
-					if (A.getCard_deb().size() > 0)
-					{
-						A.Print(A.getCard_deb());
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'4':
-				{
-					if (!A.getCard_deb().empty())
-					A.Pokupka_Card_deb();
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'5':
-				{
-					A.PrintOtch(A.getCard_deb());
-					system("pause");
-					break;
-				}
-				case'6':
-				{
-					if (!A.getCard_deb().empty())
-					A.SavetoFile(A.getCard_deb(), 2);
-					else
-						cout << "Список пуст.\n";
-					system("pause");
-					break;
-				}
-				case'7':
-				{
-					A.TopSumm(A.getCard_deb());
-					system("pause");
-					break;
-				}
-				}
-			} while (vvod2 != 27);
-			break;
-		}
-		case'3':
-		{
-			char vvod2;
-			do
-			{
-				system("cls");
-				cout << "1. Добавить карту(кредит).\n2. Пополнить карту(кредит).\n";
-				cout << "3. Показать список всех карт(кредит).\n4. Сделать покупки.\n";
-				cout << "5. Отчёт о покупках.\n6. Сохранение отчёта в файл.\n";
-				cout << "7. Топ 3 максимальных платежей.\n";
-				cout << "Esc. Предыдущее меню.\n~~~~~~~~~~~~~~~~~~~~~~~\n";
-				vvod2 = _getch();
-				switch (vvod2)
-				{
-				case'1':
-				{
-					A.set_Card_credit(A.AddPocket());
-					system("pause");
-					break;
-				}
-				case'2':
-				{
-					if (A.getCard_credit().size() > 0)
-					{
-						A.Popolnenie_Card_credit();
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'3':
-				{
-					if (A.getCard_credit().size() > 0)
-					{
-						A.Print(A.getCard_credit());
-					}
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'4':
-				{
-					if (!A.getCard_credit().empty())
-					A.Pokupka_Card_credit();
-					else
-						cout << "Список карт пуст.\n";
-					system("pause");
-					break;
-				}
-				case'5':
-				{
-					A.PrintOtch(A.getCard_credit());
-					system("pause");
-					break;
-				}
-				case'6':
-				{
-					if(!A.getCard_credit().empty())
-					A.SavetoFile(A.getCard_credit(), 3);
-					else
-						cout << "Список пуст.\n";
-					system("pause");
-					break;
-				}
-				case'7':
-				{
-					A.TopSumm(A.getCard_credit());
-					system("pause");
-					break;
-				}
-				}
-			} while (vvod2 != 27);
-			break;
-		}
-		default:
-			break;
-		}
-		
-	} while (vvod != 27);
 
-	return 0;
+	string Menu[] = { "Кошелёк", "Карта дебетовая", "Карта кредитная", "Выход" };
+	int active_menu = 0;
+
+	char ch;
+	while (true)
+	{
+		int x = 32, y = 17;
+		GoToXY(x, y);
+
+		for (int i = 0; i < size(Menu); i++)
+		{
+			if (i == active_menu)
+				SetConsoleTextAttribute(hStdOut, 8);
+			else
+				SetConsoleTextAttribute(hStdOut, 7);
+			GoToXY(x, y++);
+			cout << Menu[i] << endl;
+		}
+		ch = _getch();
+		if (ch == -32) ch = _getch();
+		switch (ch)
+		{
+		case ESC:
+			exit(0);
+		case UP:
+			if (--active_menu < 0)
+				active_menu = size(Menu) - 1;
+			break;
+		case DOWN:
+			if (++active_menu > size(Menu) - 1)
+				active_menu = 0;
+			break;
+		case ENTER:
+			switch (active_menu)
+			{
+			case 0:
+			{
+				int active_menu2 = 0;
+				char ch2 = 'a';
+				while (ch2 != 27)
+				{
+					x = 32, y = 17;
+					system("cls");
+					GoToXY(x, y);
+
+					string Menu2[] = { "Добавить кошелёк","Пополнить кошелёк",
+						"Показать список всех кошельков","Сделать покупки",
+					"Отчёт о покупках","Сохранение отчёта в файл",
+					"Топ 3 максимальных платежей", "Предыдущее меню" };
+
+					for (int i = 0; i < size(Menu2); i++)
+					{
+						if (i == active_menu2)
+							SetConsoleTextAttribute(hStdOut, 8);
+						else
+							SetConsoleTextAttribute(hStdOut, 7);
+						GoToXY(x, y++);
+						cout << Menu2[i] << endl;
+					}
+					ch2 = _getch();
+					switch (ch2)
+					{
+					case UP:
+						if (--active_menu2 < 0)
+							active_menu2 = size(Menu2) - 1;
+						break;
+					case DOWN:
+						if (++active_menu2 > size(Menu2) - 1)
+							active_menu2 = 0;
+						break;
+					case ENTER:
+						switch (active_menu2)
+						{
+						case 0:
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.set_Pocket(A.AddPocket());
+							cout << "Добавлено!\n";
+							system("pause");
+							break;
+						case 1:						
+							if (A.getPocket().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Popolnenie_Pocket();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 2:
+							
+							if (A.getPocket().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Print(A.getPocket());
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 3:
+							if (!A.getPocket().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Pokupka_Pocket();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";							
+							}
+							system("pause");
+							break;
+						case 4:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.PrintOtch(A.getPocket());
+							system("pause");
+							break;
+						}
+						case 5:
+						{
+							if (!A.getPocket().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.SavetoFile(A.getPocket(), 1);
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список пуст.\n";
+							}
+							system("pause");
+							break;
+						}
+						case 6:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.TopSumm(A.getPocket());
+							system("pause");
+							break;
+						}
+						case 7:
+							ch2 = 27;
+							break;
+						}
+					}
+				}
+				system("cls");
+				break;
+			}
+			case 1:
+			{
+				int active_menu2 = 0;
+				char ch2 = 'a';
+				while (ch2 != 27)
+				{
+					x = 32, y = 17;
+					system("cls");
+					GoToXY(x, y);
+
+					string Menu2[] = { "Добавить карту(дебет)","Пополнить карту(дебет)",
+						"Показать список всех карт(дебет)","Сделать покупки",
+					"Отчёт о покупках","Сохранение отчёта в файл",
+					"Топ 3 максимальных платежей", "Предыдущее меню" };
+
+					for (int i = 0; i < size(Menu2); i++)
+					{
+						if (i == active_menu2)
+							SetConsoleTextAttribute(hStdOut, 8);
+						else
+							SetConsoleTextAttribute(hStdOut, 7);
+						GoToXY(x, y++);
+						cout << Menu2[i] << endl;
+					}
+					ch2 = _getch();
+					switch (ch2)
+					{
+					case UP:
+						if (--active_menu2 < 0)
+							active_menu2 = size(Menu2) - 1;
+						break;
+					case DOWN:
+						if (++active_menu2 > size(Menu2) - 1)
+							active_menu2 = 0;
+						break;
+					case ENTER:
+						switch (active_menu2)
+						{
+						case 0:
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.set_Card_deb(A.AddPocket());
+							cout << "Добавлено!\n";
+							system("pause");
+							break;
+						case 1:
+							if (A.getCard_deb().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Popolnenie_Card_deb();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 2:
+
+							if (A.getCard_deb().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Print(A.getCard_deb());
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 3:
+							if (!A.getCard_deb().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Pokupka_Card_deb();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 4:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.PrintOtch(A.getCard_deb());
+							system("pause");
+							break;
+						}
+						case 5:
+						{
+							if (!A.getCard_deb().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.SavetoFile(A.getCard_deb(), 2);
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список пуст.\n";
+							}
+							system("pause");
+							break;
+						}
+						case 6:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.TopSumm(A.getCard_deb());
+							system("pause");
+							break;
+						}
+						case 7:
+							ch2 = 27;
+							break;
+						}
+					}
+				}
+				system("cls");
+				break;
+			}
+			case 2:
+			{
+				int active_menu2 = 0;
+				char ch2 = 'a';
+				while (ch2 != 27)
+				{
+					x = 32, y = 17;
+					system("cls");
+					GoToXY(x, y);
+
+					string Menu2[] = { "Добавить карту(кредит)","Пополнить карту(кредит)",
+						"Показать список всех карт(кредит)","Сделать покупки",
+					"Отчёт о покупках","Сохранение отчёта в файл",
+					"Топ 3 максимальных платежей", "Предыдущее меню" };
+
+					for (int i = 0; i < size(Menu2); i++)
+					{
+						if (i == active_menu2)
+							SetConsoleTextAttribute(hStdOut, 8);
+						else
+							SetConsoleTextAttribute(hStdOut, 7);
+						GoToXY(x, y++);
+						cout << Menu2[i] << endl;
+					}
+					ch2 = _getch();
+					switch (ch2)
+					{
+					case UP:
+						if (--active_menu2 < 0)
+							active_menu2 = size(Menu2) - 1;
+						break;
+					case DOWN:
+						if (++active_menu2 > size(Menu2) - 1)
+							active_menu2 = 0;
+						break;
+					case ENTER:
+						switch (active_menu2)
+						{
+						case 0:
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.set_Card_credit(A.AddPocket());
+							cout << "Добавлено!\n";
+							system("pause");
+							break;
+						case 1:
+							if (A.getCard_credit().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Popolnenie_Card_credit();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 2:
+
+							if (A.getCard_credit().size() > 0)
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Print(A.getCard_credit());
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 3:
+							if (!A.getCard_credit().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.Pokupka_Card_credit();
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список карт пуст.\n";
+							}
+							system("pause");
+							break;
+						case 4:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.PrintOtch(A.getCard_credit());
+							system("pause");
+							break;
+						}
+						case 5:
+						{
+							if (!A.getCard_credit().empty())
+							{
+								SetConsoleTextAttribute(hStdOut, 8);
+								A.SavetoFile(A.getCard_credit(), 3);
+							}
+							else
+							{
+								SetConsoleTextAttribute(hStdOut, 4);
+								cout << "Список пуст.\n";
+							}
+							system("pause");
+							break;
+						}
+						case 6:
+						{
+							SetConsoleTextAttribute(hStdOut, 8);
+							A.TopSumm(A.getCard_credit());
+							system("pause");
+							break;
+						}
+						case 7:
+							ch2 = 27;
+							break;
+						}
+					}
+				}
+				system("cls");
+				break;
+			}
+			case 3:
+				exit(0);
+			}
+
+		}
+	}
 }
